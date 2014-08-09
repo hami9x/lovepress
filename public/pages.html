@@ -1,0 +1,55 @@
+<div class="container">
+   <div class="header">
+		<switchmenu ActiveClass="active" bind="Current: pageId()">
+		    <ul class="nav nav-pills pull-right" role="tablist">
+	            <li case="pg-home"><a bind-page="url(`pg-home`)">Home</a></li>
+	            <li case="pg-user-login"><a bind-page="url(`pg-user-login`)">Login</a></li>
+	            <li case="pg-user-register"><a bind-page="url(`pg-user-register`)">Register</a></li>
+		    </ul>
+		</switchmenu>
+	    <h3 class="text-muted">Lovepress</h3>
+   </div>
+	
+   <div>
+    	<wrapper w-belong="pg-home">
+				
+        </wrapper>
+        
+        <wrapper w-belong="pg-user-login">
+            <form role="form">
+                <div class="form-group">
+                    <label for="username">Username</label>
+                    <input type="text" class="form-control" id="username" bind-value="Data.Username">
+                    <errorlist bind="Errors: Errors.Username"></errorlist>
+                </div>
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <input type="password" class="form-control" id="password" bind-value="Data.Password">
+                    <errorlist bind="Errors: Errors.Password"></errorlist>
+                </div>
+                <button class="btn btn-primary" bind-on-click="Submit">Submit</button>
+            </form>          
+        </wrapper>
+		
+		<wrapper w-belong="pg-user-register">
+            <form role="form">
+                <div class="form-group">
+                    <label for="username">Username</label>
+                    <input type="text" class="form-control" id="username" bind-value="Data.Username">
+                    <errorlist bind="Errors: Errors.Username"></errorlist>
+                </div>
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <input type="password" class="form-control" id="password" bind-value="Data.Password">
+                    <errorlist bind="Errors: Errors.Password"></errorlist>
+                </div>
+                <button class="btn btn-primary" bind-on-click="Submit">Submit</button>
+            </form>          
+        </wrapper>
+   </div>	
+
+	<div class="footer">
+        <p>&copy; VosDev 2014</p>
+    </div>
+
+</div> <!-- /container -->

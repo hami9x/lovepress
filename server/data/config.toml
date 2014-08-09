@@ -1,0 +1,6 @@
+[database]
+Database =
+User     =
+Password =
+Host     = "localhost"
+Port     = 5432
