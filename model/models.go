@@ -21,8 +21,9 @@ type UsernamePassword struct {
 }
 
 type User struct {
-	UsernamePassword
-	Id    int64
-	Role  UserRole
-	Token string `json:"token"`
+	Username string `json:"username"`
+	Password string `json:"password"`
+	Id       int64
+	Role     UserRole
+	Token    string `json:"token"`
 }

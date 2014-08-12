@@ -3,8 +3,10 @@
 		<switchmenu ActiveClass="active" bind="Current: pageId()">
 		    <ul class="nav nav-pills pull-right" role="tablist">
 	            <li case="pg-home"><a bind-page="url(`pg-home`)">Home</a></li>
-	            <li case="pg-user-login"><a bind-page="url(`pg-user-login`)">Login</a></li>
-	            <li case="pg-user-register"><a bind-page="url(`pg-user-register`)">Register</a></li>
+				<wrapper bind-ifn="Authenticated">
+		            <li case="pg-user-login"><a bind-page="url(`pg-user-login`)">Login</a></li>
+		            <li case="pg-user-register"><a bind-page="url(`pg-user-register`)">Register</a></li>
+				</wrapper>
 		    </ul>
 		</switchmenu>
 	    <h3 class="text-muted">Lovepress</h3>

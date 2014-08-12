@@ -10,6 +10,7 @@ import (
 	"github.com/golang/glog"
 	"github.com/pilu/fresh/runner/runnerutils"
 
+	"github.com/phaikawl/lovepress/model"
 	"github.com/phaikawl/lovepress/server/dblayer"
 	"github.com/phaikawl/lovepress/server/services/db"
 )
@@ -17,6 +18,8 @@ import (
 const (
 	MySigningKey   = "n0t9r34t6cz9r34tn0t1na9r34tw4y"
 	ConfigFilePath = "data/config.toml"
+	ServerError    = http.StatusInternalServerError
+	BadRequest     = http.StatusBadRequest
 )
 
 var (
@@ -24,12 +27,14 @@ var (
 )
 
 type Environment struct {
-	devMode bool
+	devMode  bool
+	basePath string
 }
 
 func environment() *Environment {
 	return &Environment{
-		devMode: true,
+		devMode:  true,
+		basePath: "/",
 	}
 }
 
@@ -37,19 +42,8 @@ func (g *Environment) IsDevMode() bool {
 	return g.devMode
 }
 
-func reportError(err error, c *gin.Context, httpStatus int) {
-	if g.IsDevMode() {
-		c.Fail(httpStatus, err)
-	} else {
-		glog.Error(err.Error())
-		c.Fail(httpStatus, nil)
-	}
-}
-
-func checkError(err error, c *gin.Context, httpStatus int) {
-	if err != nil {
-		reportError(err, c, httpStatus)
-	}
+func (g *Environment) BasePath() string {
+	return g.basePath
 }
 
 func runnerMiddleware(c *gin.Context) {
@@ -61,6 +55,84 @@ func runnerMiddleware(c *gin.Context) {
 
 type Config struct {
 	Db db.Config `toml:"database"`
+}
+
+type Context struct {
+	*gin.Context
+
+	user *model.User
+}
+
+func NewContext(c *gin.Context) *Context {
+	return &Context{
+		Context: c,
+	}
+}
+
+func (ctx *Context) ReportError(err error, httpStatus int) {
+	if g.IsDevMode() {
+		ctx.Fail(httpStatus, err)
+	} else {
+		glog.Error(err.Error())
+		ctx.Fail(httpStatus, nil)
+	}
+}
+
+func (ctx *Context) CheckError(err error, httpStatus int) {
+	if err != nil {
+		ctx.ReportError(err, httpStatus)
+	}
+}
+
+func (ctx *Context) Response(data interface{}) {
+	ctx.JSON(http.StatusOK, data)
+}
+
+type RouterGroup struct {
+	*gin.RouterGroup
+}
+
+type HandlerFunc func(*Context)
+
+func (r RouterGroup) toGinList(handlers []HandlerFunc) []gin.HandlerFunc {
+	list := make([]gin.HandlerFunc, len(handlers))
+	for i, fn := range handlers {
+		list[i] = func(c *gin.Context) {
+			fn(NewContext(c))
+		}
+	}
+
+	return list
+}
+
+func (r RouterGroup) Group(route string, handler HandlerFunc) RouterGroup {
+	return RouterGroup{r.RouterGroup.Group(route, func(c *gin.Context) {
+		if handler != nil {
+			handler(NewContext(c))
+		}
+	})}
+}
+
+func (r RouterGroup) Use(handlers ...HandlerFunc) {
+	r.RouterGroup.Use(r.toGinList(handlers)...)
+}
+
+func (r RouterGroup) GET(route string, handlers ...HandlerFunc) {
+	r.RouterGroup.GET(route, r.toGinList(handlers)...)
+}
+
+func (r RouterGroup) POST(route string, handlers ...HandlerFunc) {
+	r.RouterGroup.POST(route, r.toGinList(handlers)...)
+}
+
+type ApiSystem struct {
+	Public    RouterGroup
+	Protected RouterGroup
+	Dev       RouterGroup
+}
+
+type ApiProvider interface {
+	ProvideApi(apis ApiSystem)
 }
 
 func main() {
@@ -90,15 +162,42 @@ func main() {
 	api := r.Group("/api/", func(c *gin.Context) {
 	})
 
-	userApi(api)
+	protected := api.Group("/protected/", func(c *gin.Context) {})
+
+	devapi := api.Group("/dev", func(c *gin.Context) {
+		if !g.IsDevMode() {
+			c.Abort(http.StatusNotFound)
+		}
+	})
+
+	apiProviders := []ApiProvider{
+		AuthApi{
+			jwtSigningKey: MySigningKey,
+		},
+	}
+
+	apis := ApiSystem{
+		Public:    RouterGroup{api},
+		Protected: RouterGroup{protected},
+		Dev:       RouterGroup{devapi},
+	}
+
+	for _, provider := range apiProviders {
+		provider.ProvideApi(apis)
+	}
+
+	apis.Protected.GET("/test", func(c *Context) {
+		c.Response("OK Baby")
+	})
 
 	// Subpaths of /web/ are client urls, should NOT be protected
 	// Just serve the index.html for every subpaths actually, nothing else
 	web := r.Group("/web/", func(c *gin.Context) {
+		ctx := NewContext(c)
 		f, err := os.Open("../public/index.html")
-		checkError(err, c, http.StatusInternalServerError)
+		ctx.CheckError(err, http.StatusInternalServerError)
 		conts, err := ioutil.ReadAll(f)
-		checkError(err, c, http.StatusInternalServerError)
+		ctx.CheckError(err, http.StatusInternalServerError)
 		c.Data(200, "text/html", conts)
 	})
 	web.GET("*path", func(c *gin.Context) {})

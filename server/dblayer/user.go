@@ -16,11 +16,16 @@ func (us UserService) Create(user *model.User) error {
 	return gDb.Insert(user)
 }
 
-func (us UserService) ByUsername(username string) *model.User {
+func (us UserService) Update(user *model.User) error {
+	_, err := gDb.Update(user)
+	return err
+}
+
+func (us UserService) ByUsername(username string) (*model.User, bool) {
 	user := &model.User{}
 	err := gDb.SelectOne(user, UserByUsernameSql, username)
 	if err != nil {
-		return nil
+		return nil, false
 	}
-	return user
+	return user, true
 }
