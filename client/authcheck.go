@@ -1,4 +1,4 @@
-package main
+package client
 
 import (
 	"github.com/phaikawl/wade"
@@ -11,8 +11,8 @@ type AuthModule struct {
 	checkUrl      string
 }
 
-func (s *AuthModule) Init(app wade.AppEnv) {
-	s.interceptors(app)
+func (s *AuthModule) Init(services wade.GlobalServices) {
+	s.interceptors(services)
 }
 
 func NewAuthModule(loginPage, checkurl string) *AuthModule {
@@ -23,8 +23,8 @@ func NewAuthModule(loginPage, checkurl string) *AuthModule {
 	}
 }
 
-func (s *AuthModule) interceptors(app wade.AppEnv) {
-	httpService := app.Services.Http
+func (s *AuthModule) interceptors(services wade.GlobalServices) {
+	httpService := services.Http
 
 	checkResult := -1
 	processFn := func() int {
@@ -46,7 +46,7 @@ func (s *AuthModule) interceptors(app wade.AppEnv) {
 	}
 
 	httpService.AddResponseInterceptor(func(finishChannel chan bool, r *http.Request) {
-		if r.Response.Status == 401 && checkResult != 0 {
+		if r.Response.StatusCode == 401 && checkResult != 0 {
 			var fn func()
 			fn = func() {
 				if checkResult == -1 {
@@ -54,12 +54,12 @@ func (s *AuthModule) interceptors(app wade.AppEnv) {
 				}
 
 				if checkResult == 0 {
-					app.PageManager.RedirectToPage(s.loginPage)
+					services.PageManager.RedirectToPage(s.loginPage)
 					return
 				}
 
 				resp, _ := httpService.DoPure(r)
-				if resp.Status == 401 {
+				if resp.StatusCode == 401 {
 					checkResult = -1
 					fn()
 				}

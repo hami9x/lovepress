@@ -2,22 +2,22 @@
    <div class="header">
 		<switchmenu ActiveClass="active" bind="Current: pageId()">
 		    <ul class="nav nav-pills pull-right" role="tablist">
-	            <li case="pg-home"><a bind-page="url(`pg-home`)">Home</a></li>
-				<wrapper bind-ifn="Authenticated">
-		            <li case="pg-user-login"><a bind-page="url(`pg-user-login`)">Login</a></li>
-		            <li case="pg-user-register"><a bind-page="url(`pg-user-register`)">Register</a></li>
-				</wrapper>
+	            <li case="pg-home"><a bind-page="url('pg-home')">Home</a></li>
+				<ww bind-ifn="Authenticated">
+		            <li case="pg-user-login"><a bind-page="url('pg-user-login')">Login</a></li>
+		            <li case="pg-user-register"><a bind-page="url('pg-user-register')">Register</a></li>
+				</ww>
 		    </ul>
 		</switchmenu>
 	    <h3 class="text-muted">Lovepress</h3>
    </div>
 	
    <div>
-    		<wrapper w-belong="pg-home">
-				
-        </wrapper>
+    	<ww w-belong="pg-home">
+			Home	
+        </ww>
         
-        <wrapper w-belong="pg-user-login">
+        <ww w-belong="pg-user-login">
             <form role="form">
                 <div class="form-group">
                     <label for="username">Username</label>
@@ -31,9 +31,9 @@
                 </div>
                 <button class="btn btn-primary" bind-on-click="Submit">Submit</button>
             </form>          
-        </wrapper>
+        </ww>
 		
-		<wrapper w-belong="pg-user-register">
+		<ww w-belong="pg-user-register">
             <form role="form">
                 <div class="form-group">
                     <label for="username">Username</label>
@@ -47,7 +47,7 @@
                 </div>
                 <button class="btn btn-primary" bind-on-click="Submit">Submit</button>
             </form>          
-        </wrapper>
+        </ww>
    </div>	
 
 	<div class="footer">

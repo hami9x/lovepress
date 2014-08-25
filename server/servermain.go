@@ -1,7 +1,7 @@
 package main
 
 import (
-	"io/ioutil"
+	"bytes"
 	"net/http"
 	"os"
 
@@ -10,9 +10,12 @@ import (
 	"github.com/golang/glog"
 	"github.com/pilu/fresh/runner/runnerutils"
 
+	"github.com/phaikawl/lovepress/client"
 	"github.com/phaikawl/lovepress/model"
 	"github.com/phaikawl/lovepress/server/dblayer"
 	"github.com/phaikawl/lovepress/server/services/db"
+	"github.com/phaikawl/wade"
+	wadess "github.com/phaikawl/wade/rbackend/serverside"
 )
 
 const (
@@ -191,14 +194,19 @@ func main() {
 	})
 
 	// Subpaths of /web/ are client urls, should NOT be protected
-	// Just serve the index.html for every subpaths actually, nothing else
+	// it renders the page
 	web := r.Group("/web/", func(c *gin.Context) {
 		ctx := NewContext(c)
 		f, err := os.Open("../public/index.html")
 		ctx.CheckError(err, http.StatusInternalServerError)
-		conts, err := ioutil.ReadAll(f)
-		ctx.CheckError(err, http.StatusInternalServerError)
-		c.Data(200, "text/html", conts)
+		buf := bytes.NewBufferString("")
+
+		ctx.CheckError(wadess.RenderApp(buf, wade.AppConfig{
+			StartPage: "pg-home",
+			BasePath:  "/web",
+		}, client.InitFunc, f, r, c.Request), http.StatusInternalServerError)
+
+		c.Data(200, "text/html", buf.Bytes())
 	})
 	web.GET("*path", func(c *gin.Context) {})
 
